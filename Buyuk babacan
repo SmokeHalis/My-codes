@@ -1,0 +1,154 @@
+local ScreenGui = Instance.new("ScreenGui")
+local MainFrame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local ToggleBtn = Instance.new("TextButton")
+local SpeedUpBtn = Instance.new("TextButton")
+local SpeedDownBtn = Instance.new("TextButton")
+local SpeedLabel = Instance.new("TextLabel")
+local UICorner = Instance.new("UICorner")
+
+-- Parent Ayarları
+ScreenGui.Name = "BuyukBabacanFly"
+ScreenGui.Parent = game.CoreGui or game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
+
+-- Ana Pencere (Küçük Fly V4 Stili)
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.1, 0, 0.4, 0)
+MainFrame.Size = UDim2.new(0, 170, 0, 130)
+MainFrame.Active = true
+MainFrame.Draggable = true -- Ekranda istediğin yere sürükleyebilirsin
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = MainFrame
+
+-- Başlık
+Title.Name = "Title"
+Title.Parent = MainFrame
+Title.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Title.Size = UDim2.new(1, 0, 0, 25)
+Title.Font = Enum.Font.SourceSansBold
+Title.Text = "Büyük Babacan_Fly"
+Title.TextColor3 = Color3.fromRGB(0, 255, 127)
+Title.TextSize = 14.000
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = Title
+
+-- Uçuş Değişkenleri
+local flying = false
+local speed = 50
+local player = game.Players.LocalPlayer
+local maxSpeed = 1000
+local minSpeed = 50
+
+-- Aç / Kapat Butonu
+ToggleBtn.Name = "ToggleBtn"
+ToggleBtn.Parent = MainFrame
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.28, 0)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 30)
+ToggleBtn.Font = Enum.Font.SourceSansBold
+ToggleBtn.Text = "FLY: KAPALI"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 14.000
+
+-- Hız Etiketi
+SpeedLabel.Name = "SpeedLabel"
+SpeedLabel.Parent = MainFrame
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Position = UDim2.new(0, 0, 0.55, 0)
+SpeedLabel.Size = UDim2.new(1, 0, 0, 20)
+SpeedLabel.Font = Enum.Font.SourceSans
+SpeedLabel.Text = "Hız: " .. tostring(speed)
+SpeedLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedLabel.TextSize = 14.000
+
+-- Hız Artırma (+50)
+SpeedUpBtn.Name = "SpeedUpBtn"
+SpeedUpBtn.Parent = MainFrame
+SpeedUpBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpeedUpBtn.Position = UDim2.new(0.55, 0, 0.72, 0)
+SpeedUpBtn.Size = UDim2.new(0.35, 0, 0, 25)
+SpeedUpBtn.Font = Enum.Font.SourceSansBold
+SpeedUpBtn.Text = "+50"
+SpeedUpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedUpBtn.TextSize = 14.000
+
+-- Hız Azaltma (-50)
+SpeedDownBtn.Name = "SpeedDownBtn"
+SpeedDownBtn.Parent = MainFrame
+SpeedDownBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+SpeedDownBtn.Position = UDim2.new(0.1, 0, 0.72, 0)
+SpeedDownBtn.Size = UDim2.new(0.35, 0, 0, 25)
+SpeedDownBtn.Font = Enum.Font.SourceSansBold
+SpeedDownBtn.Text = "-50"
+SpeedDownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedDownBtn.TextSize = 14.000
+
+--- Uçuş Mantığı (Mobile Uyumlu)
+local BodyVelocity, BodyGyro
+
+local function startFly()
+	local char = player.Character or player.CharacterAdded:Wait()
+	local root = char:WaitForChild("HumanoidRootPart")
+	
+	BodyVelocity = Instance.new("BodyVelocity")
+	BodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+	BodyVelocity.Velocity = Vector3.zero
+	BodyVelocity.Parent = root
+	
+	BodyGyro = Instance.new("BodyGyro")
+	BodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+	BodyGyro.CFrame = root.CFrame
+	BodyGyro.Parent = root
+	
+	task.spawn(function()
+		while flying and char and root do
+			local camera = workspace.CurrentCamera
+			BodyGyro.CFrame = camera.CFrame
+			BodyVelocity.Velocity = camera.CFrame.LookVector * speed
+			task.wait()
+		end
+	end)
+end
+
+local function stopFly()
+	if BodyVelocity then BodyVelocity:Destroy() end
+	if BodyGyro then BodyGyro:Destroy() end
+end
+
+-- Buton Etkileşimleri
+ToggleBtn.MouseButton1Click:Connect(function()
+	flying = not flying
+	if flying then
+		ToggleBtn.Text = "FLY: AÇIK"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 180, 40)
+		startFly()
+	else
+		ToggleBtn.Text = "FLY: KAPALI"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(180, 40, 40)
+		stopFly()
+	end
+end)
+
+SpeedUpBtn.MouseButton1Click:Connect(function()
+	if speed < maxSpeed then
+		speed = speed + 50
+		if speed > maxSpeed then speed = maxSpeed end
+		SpeedLabel.Text = "Hız: " .. tostring(speed)
+	end
+end)
+
+SpeedDownBtn.MouseButton1Click:Connect(function()
+	if speed > minSpeed then
+		speed = speed - 50
+		if speed < minSpeed then speed = minSpeed end
+		SpeedLabel.Text = "Hız: " .. tostring(speed)
+	end
+end)
