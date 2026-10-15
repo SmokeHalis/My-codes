@@ -1,0 +1,168 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "BuyukBabacanFlyGUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = game.CoreGui or LocalPlayer:WaitForChild("PlayerGui")
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Position = UDim2.new(0.1, 0, 0.3, 0)
+MainFrame.Size = UDim2.new(0, 160, 0, 100)
+MainFrame.Active = true
+MainFrame.Draggable = true
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 10)
+UICorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(0, 255, 150)
+UIStroke.Thickness = 1.5
+UIStroke.Parent = MainFrame
+
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Parent = MainFrame
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.12, 0)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 32)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.Text = "FLY: KAPALI"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.TextSize = 12.000
+
+local BtnCorner = Instance.new("UICorner")
+BtnCorner.CornerRadius = UDim.new(0, 8)
+BtnCorner.Parent = ToggleBtn
+
+local SpeedLabel = Instance.new("TextLabel")
+SpeedLabel.Parent = MainFrame
+SpeedLabel.BackgroundTransparency = 1
+SpeedLabel.Position = UDim2.new(0, 0, 0.48, 0)
+SpeedLabel.Size = UDim2.new(1, 0, 0, 18)
+SpeedLabel.Font = Enum.Font.Gotham
+SpeedLabel.Text = "Hız: 50"
+SpeedLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+SpeedLabel.TextSize = 11.000
+
+local SpeedDownBtn = Instance.new("TextButton")
+SpeedDownBtn.Parent = MainFrame
+SpeedDownBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+SpeedDownBtn.Position = UDim2.new(0.1, 0, 0.68, 0)
+SpeedDownBtn.Size = UDim2.new(0.35, 0, 0, 25)
+SpeedDownBtn.Font = Enum.Font.GothamBold
+SpeedDownBtn.Text = "-50"
+SpeedDownBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedDownBtn.TextSize = 12.000
+
+local SpeedDownCorner = Instance.new("UICorner")
+SpeedDownCorner.CornerRadius = UDim.new(0, 6)
+SpeedDownCorner.Parent = SpeedDownBtn
+
+local SpeedUpBtn = Instance.new("TextButton")
+SpeedUpBtn.Parent = MainFrame
+SpeedUpBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+SpeedUpBtn.Position = UDim2.new(0.55, 0, 0.68, 0)
+SpeedUpBtn.Size = UDim2.new(0.35, 0, 0, 25)
+SpeedUpBtn.Font = Enum.Font.GothamBold
+SpeedUpBtn.Text = "+50"
+SpeedUpBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+SpeedUpBtn.TextSize = 12.000
+
+local SpeedUpCorner = Instance.new("UICorner")
+SpeedUpCorner.CornerRadius = UDim.new(0, 6)
+SpeedUpCorner.Parent = SpeedUpBtn
+
+local flying = false
+local flySpeed = 50
+local maxSpeed = 1000
+local minSpeed = 50
+local flyConnection = nil
+
+local BodyVelocity, BodyGyro
+
+local function startFlying()
+	local char = LocalPlayer.Character
+	if not char then return end
+	local root = char:FindFirstChild("HumanoidRootPart")
+	local humanoid = char:FindFirstChildOfClass("Humanoid")
+	if not root or not humanoid then return end
+
+	BodyVelocity = Instance.new("BodyVelocity")
+	BodyVelocity.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+	BodyVelocity.Velocity = Vector3.zero
+	BodyVelocity.Parent = root
+
+	BodyGyro = Instance.new("BodyGyro")
+	BodyGyro.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+	BodyGyro.CFrame = root.CFrame
+	BodyGyro.Parent = root
+
+	humanoid.PlatformStand = true
+
+	flyConnection = RunService.RenderStepped:Connect(function()
+		if flying and root and humanoid then
+			BodyGyro.CFrame = Camera.CFrame
+			
+			local moveDir = humanoid.MoveDirection
+			if moveDir.Magnitude > 0 then
+				BodyVelocity.Velocity = Camera.CFrame:VectorToWorldSpace(Camera.CFrame:VectorToObjectSpace(moveDir)) * flySpeed
+			else
+				BodyVelocity.Velocity = Vector3.zero
+			end
+		end
+	end)
+end
+
+local function stopFlying()
+	if flyConnection then
+		flyConnection:Disconnect()
+		flyConnection = nil
+	end
+	if BodyVelocity then BodyVelocity:Destroy() end
+	if BodyGyro then BodyGyro:Destroy() end
+	
+	local char = LocalPlayer.Character
+	if char then
+		local humanoid = char:FindFirstChildOfClass("Humanoid")
+		if humanoid then
+			humanoid.PlatformStand = false
+		end
+	end
+end
+
+ToggleBtn.MouseButton1Click:Connect(function()
+	flying = not flying
+	if flying then
+		ToggleBtn.Text = "FLY: AÇIK"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 100)
+		startFlying()
+	else
+		ToggleBtn.Text = "FLY: KAPALI"
+		ToggleBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+		stopFlying()
+	end
+end)
+
+SpeedUpBtn.MouseButton1Click:Connect(function()
+	if flySpeed < maxSpeed then
+		flySpeed = flySpeed + 50
+		if flySpeed > maxSpeed then flySpeed = maxSpeed end
+		SpeedLabel.Text = "Hız: " .. tostring(flySpeed)
+	end
+end)
+
+SpeedDownBtn.MouseButton1Click:Connect(function()
+	if flySpeed > minSpeed then
+		flySpeed = flySpeed - 50
+		if flySpeed < minSpeed then flySpeed = minSpeed end
+		SpeedLabel.Text = "Hız: " .. tostring(flySpeed)
+	end
+end)
